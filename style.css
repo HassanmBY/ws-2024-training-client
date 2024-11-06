@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+
+#chatZone div:nth-child(odd) {
+    @apply bg-primary-light;
+}

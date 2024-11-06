@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="./style.css" />
+		<title>Chat Box - Login</title>
+	</head>
+	<body class="h-svh flex flex-col justify-between">
+		<dialog
+			class="border-b border-2 rounded-md shadow-xl absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] p-12 m-0 z-10"
+			id="loading"
+		>
+			loading ...
+		</dialog>
+		<header class="bg-primary">
+			<h1 class="text-white text-3xl p-6 text-center">On cause</h1>
+		</header>
+
+		<main class="flex justify-center align-middle">
+			<form
+				class="flex flex-col border-b border-2 rounded-md shadow-lg p-4 gap-2 relative"
+				id="form"
+			>
+				<label for="name">Votre pseudo</label>
+				<input
+					type="text"
+					name="name"
+					id="name"
+					class="border-b border-2 rounded-md"
+				/>
+				<input
+					type="submit"
+					value="Envoyer"
+					class="self-end bg-primary px-4 py-1 text-white rounded-md"
+				/>
+			</form>
+		</main>
+
+		<footer class="bg-primary">
+			<p class="text-white p-6 text-center">&copy; Hassan Mirza - 2024</p>
+		</footer>
+
+		<script>
+			const form = document.querySelector("#form");
+			const nameInput = document.querySelector("#name");
+
+			localStorage.clear();
+
+			async function createUser(username) {
+				fetch("http://localhost/ultime-test/api/content/item/senders", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"api-key": "API-cb40e06ec2cea8be26e638e981ae8c1804b41742",
+					},
+					body: JSON.stringify({
+						data: {
+							sender: username,
+							_state: 1,
+						},
+					}),
+				});
+			}
+
+			form.addEventListener("submit", e => {
+				e.preventDefault();
+				const loading = document.querySelector("#loading");
+				const url = "http://localhost/ultime-test/api/content/items/";
+
+				fetch(`${url}senders`)
+					.then(resp => resp.json())
+					.then(senders => {
+						let userIsFound = false;
+						senders.forEach(sender => {
+							if (sender.sender === nameInput.value) {
+								userIsFound = true;
+								window.localStorage.setItem("currentUser", sender["sender"]);
+								window.localStorage.setItem("currentUserId", sender["_id"]);
+							}
+						});
+
+						if (userIsFound == false) {
+							createUser(nameInput.value);
+						}
+
+						loading.show();
+
+						setTimeout(() => {
+							window.location = "chat.html";
+						}, 1500);
+					});
+			});
+		</script>
+	</body>
+</html>

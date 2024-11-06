@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="./style.css" />
+		<title>Chat Box - Chat</title>
+	</head>
+	<body class="h-svh flex flex-col justify-between">
+		<header class="bg-primary">
+			<h1 class="text-white text-3xl p-6 text-center">
+				<span id="usernameBox"></span>, on cause ?
+			</h1>
+			<form
+				class="flex flex-col border-b border-2 rounded-md shadow-lg p-4 gap-2 mx-6 mb-6"
+				id="form"
+			>
+				<label for="messageBox" class="text-white">Message</label>
+				<textarea
+					type="text"
+					name="messageBox"
+					id="messageBox"
+					class="border-b border-2 rounded-md"
+				></textarea>
+				<input
+					type="submit"
+					value="Envoyer"
+					id="nameInput"
+					class="self-end bg-emerald-400 px-4 py-1 text-white rounded-md"
+				/>
+			</form>
+		</header>
+
+		<main class="flex flex-col justify-center items-center gap-6">
+			<div id="chatZone" class="aspect-square w-96 overflow-scroll"></div>
+			<button id="logout" class="bg-red-400 px-4 py-1 text-white rounded-md w-min">
+				Sortir
+			</button>
+		</main>
+
+		<footer class="bg-primary">
+			<p class="text-white p-6 text-center">&copy; Hassan Mirza - 2024</p>
+		</footer>
+
+		<script>
+			const usernameBox = document.querySelector("#usernameBox");
+			const chatZone = document.querySelector("#chatZone");
+
+			const messageBox = document.querySelector("#messageBox");
+			const form = document.querySelector("#form");
+
+			const logout = document.querySelector("#logout");
+
+			usernameBox.insertAdjacentText(
+				"beforeend",
+				window.localStorage.getItem("currentUser")
+			);
+
+			const url = "http://localhost/ultime-test/api/content/items/";
+			const urlSingular = "http://localhost/ultime-test/api/content/item/";
+
+			function hasMention(message) {
+				//prettier-ignore
+				const patternLower = `@${window.localStorage.getItem("currentUser").toLowerCase()}\\b`;
+				const regexLower = new RegExp(patternLower, "g");
+				//prettier-ignore
+				const pattern = `@${window.localStorage.getItem("currentUser")}\\b`;
+				const regex = new RegExp(pattern, "g");
+				return String(message).match(regex) || String(message).match(regexLower);
+			}
+
+			function isOwnMessage(sender) {
+				return sender === window.localStorage.getItem("currentUser");
+			}
+
+			async function showMessages() {
+				chatZone.innerHTML = "";
+				fetch(`${url}messages`)
+					.then(resp => resp.json())
+					.then(messages =>
+						messages.sort((a, b) => b["_created"] - a["_created"]).slice(-15)
+					)
+					.then(messages => {
+						messages.forEach(message => {
+							fetch(`${urlSingular}senders/${message.sender["_id"]}`)
+								.then(resp => resp.json())
+								.then(sender => {
+									// Remove tags in message
+									let tempElement = document.createElement("div");
+									tempElement.innerHTML = message.message;
+									message.message = tempElement.innerText;
+
+									// prettier-ignore
+									const entry = `
+			                                 <div class="p-2 h-min  ${hasMention(message.message) ? "text-red-600" : ""} ${isOwnMessage(sender.sender) ? "text-yellow-600": ""} ">
+			                                     <p class="flex flex-col ${isOwnMessage(sender.sender) ? "items-end": ""}">
+			                                         ${sender.sender !== window.localStorage.getItem("currentUser")
+			                                         ? `<span id="senderName" class="font-bold text-sm">${sender.sender}</span>`
+			                                         : ""
+			                                         }
+			                                         ${message.message}
+			                                     </p>
+			                                 </div>`;
+
+									chatZone.insertAdjacentHTML("afterbegin", entry);
+								});
+						});
+					});
+			}
+
+			showMessages();
+
+			form.addEventListener("submit", async e => {
+				e.preventDefault();
+				const message = messageBox.value;
+				fetch(`${urlSingular}messages`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"api-key": "API-cb40e06ec2cea8be26e638e981ae8c1804b41742",
+					},
+					body: JSON.stringify({
+						data: {
+							message: message,
+							sender: {
+								_model: "senders",
+								_id: window.localStorage.getItem("currentUserId"),
+							},
+						},
+					}),
+				}).then(
+					setTimeout(() => {
+						showMessages();
+					}, 200)
+				);
+			});
+
+			logout.addEventListener("click", e => {
+				e.preventDefault();
+				window.localStorage.removeItem("currentUser");
+				window.localStorage.removeItem("currentUserId");
+				window.location = "index.html";
+			});
+		</script>
+	</body>
+</html>
